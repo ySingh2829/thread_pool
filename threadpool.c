@@ -20,8 +20,6 @@ struct tpool_ {
     pthread_cond_t idle_cond;   // Signals when there are no threads processing
     size_t working_cnt;         // No. of threads processing
     size_t thread_cnt;          // No of threads
-    size_t queue_length;        // Max queue length
-    size_t current_length;      // Current queue length
     bool stopped;
 };
 
@@ -65,6 +63,8 @@ tpool_work_pull(tpool_t *pool)
 static void
 tpool_work_free(wthread_t *worker)
 {
+    if (worker == NULL)
+        return;
     free(worker);
 }
 
@@ -126,9 +126,6 @@ tpool_worker_routine(void *arg)
     return NULL;
 }
 
-static void
-tpool_wait(void);
-
 tpool_t *
 threadpool_create(size_t num_of_threads)
 {
@@ -140,6 +137,7 @@ threadpool_create(size_t num_of_threads)
 
 
     pool = calloc(1, sizeof(tpool_t));
+    pool->thread_cnt = num_of_threads;
 
     if (pool == NULL) {
         fprintf(stderr, "Problem creating thread pool");
